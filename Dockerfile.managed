@@ -51,7 +51,8 @@ ENV NODE_ENV=production \
   PAPERCLIP_INSTANCE_ID=default \
   PAPERCLIP_DEPLOYMENT_MODE=local_trusted \
   PAPERCLIP_DEPLOYMENT_EXPOSURE=private \
-  PAPERCLIP_MIGRATION_AUTO_APPLY=true
+  PAPERCLIP_MIGRATION_AUTO_APPLY=true \
+  PAPERCLIP_HOSTED_MODE=true
 
 # Fleet injects these at container start:
 #   WOPR_PROVISION_SECRET  — auth token for /internal/* API
