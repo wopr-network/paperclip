@@ -24,6 +24,7 @@ import { sidebarBadgeRoutes } from "./routes/sidebar-badges.js";
 import { llmRoutes } from "./routes/llms.js";
 import { assetRoutes } from "./routes/assets.js";
 import { accessRoutes } from "./routes/access.js";
+import { provisionRoutes } from "./routes/provision.js";
 import { applyUiBranding } from "./ui-branding.js";
 import type { BetterAuthSessionResult } from "./auth/better-auth.js";
 
@@ -49,6 +50,14 @@ export async function createApp(
 
   app.use(express.json());
   app.use(httpLogger);
+
+  // Internal provisioning API — authenticated by WOPR_PROVISION_SECRET,
+  // mounted before actor middleware so platform-core can call it without
+  // a Paperclip session or agent key.
+  if (process.env.WOPR_PROVISION_SECRET) {
+    app.use("/internal", provisionRoutes(db));
+  }
+
   const privateHostnameGateEnabled =
     opts.deploymentMode === "authenticated" && opts.deploymentExposure === "private";
   const privateHostnameAllowSet = resolvePrivateHostnameAllowSet({
