@@ -457,7 +457,9 @@ export async function startServer(): Promise<StartedServer> {
     betterAuthHandler = createBetterAuthHandler(auth);
     resolveSession = (req) => resolveBetterAuthSession(auth, req);
     resolveSessionFromHeaders = (headers) => resolveBetterAuthSessionFromHeaders(auth, headers);
-    await initializeBoardClaimChallenge(db as any, { deploymentMode: config.deploymentMode });
+    if (!config.hostedMode) {
+      await initializeBoardClaimChallenge(db as any, { deploymentMode: config.deploymentMode });
+    }
     authReady = true;
   }
   
@@ -474,6 +476,7 @@ export async function startServer(): Promise<StartedServer> {
     bindHost: config.host,
     authReady,
     companyDeletionEnabled: config.companyDeletionEnabled,
+    hostedMode: config.hostedMode,
     betterAuthHandler,
     resolveSession,
   });
@@ -627,7 +630,7 @@ export async function startServer(): Promise<StartedServer> {
         databaseBackupDir: config.databaseBackupDir,
       });
 
-      const boardClaimUrl = getBoardClaimWarningUrl(config.host, listenPort);
+      const boardClaimUrl = config.hostedMode ? null : getBoardClaimWarningUrl(config.host, listenPort);
       if (boardClaimUrl) {
         const red = "\x1b[41m\x1b[30m";
         const yellow = "\x1b[33m";

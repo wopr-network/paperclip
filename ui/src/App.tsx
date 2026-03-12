@@ -91,7 +91,11 @@ function CloudAccessGate() {
     );
   }
 
-  if (isAuthenticatedMode && healthQuery.data?.bootstrapStatus === "bootstrap_pending") {
+  if (
+    isAuthenticatedMode &&
+    healthQuery.data?.bootstrapStatus === "bootstrap_pending" &&
+    !healthQuery.data?.hostedMode
+  ) {
     return <BootstrapPendingPage hasActiveInvite={healthQuery.data.bootstrapInviteActive} />;
   }
 
@@ -219,18 +223,27 @@ function OnboardingRoutePage() {
 function CompanyRootRedirect() {
   const { companies, selectedCompany, loading } = useCompany();
   const { onboardingOpen } = useDialog();
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+    retry: false,
+  });
+  const isHosted = healthQuery.data?.hostedMode === true;
 
   if (loading) {
     return <div className="mx-auto max-w-xl py-10 text-sm text-muted-foreground">Loading...</div>;
   }
 
   // Keep the first-run onboarding mounted until it completes.
-  if (onboardingOpen) {
+  if (!isHosted && onboardingOpen) {
     return <NoCompaniesStartPage autoOpen={false} />;
   }
 
   const targetCompany = selectedCompany ?? companies[0] ?? null;
   if (!targetCompany) {
+    if (isHosted) {
+      return <HostedProvisioningPage />;
+    }
     return <NoCompaniesStartPage />;
   }
 
@@ -240,6 +253,12 @@ function CompanyRootRedirect() {
 function UnprefixedBoardRedirect() {
   const location = useLocation();
   const { companies, selectedCompany, loading } = useCompany();
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+    retry: false,
+  });
+  const isHosted = healthQuery.data?.hostedMode === true;
 
   if (loading) {
     return <div className="mx-auto max-w-xl py-10 text-sm text-muted-foreground">Loading...</div>;
@@ -247,6 +266,9 @@ function UnprefixedBoardRedirect() {
 
   const targetCompany = selectedCompany ?? companies[0] ?? null;
   if (!targetCompany) {
+    if (isHosted) {
+      return <HostedProvisioningPage />;
+    }
     return <NoCompaniesStartPage />;
   }
 
@@ -284,7 +306,27 @@ function NoCompaniesStartPage({ autoOpen = true }: { autoOpen?: boolean }) {
   );
 }
 
+function HostedProvisioningPage() {
+  return (
+    <div className="mx-auto max-w-xl py-10">
+      <div className="rounded-lg border border-border bg-card p-6">
+        <h1 className="text-xl font-semibold">Setting up...</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Your workspace is being provisioned. This page will refresh automatically.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function App() {
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+    retry: false,
+  });
+  const isHosted = healthQuery.data?.hostedMode === true;
+
   return (
     <>
       <Routes>
@@ -322,7 +364,7 @@ export function App() {
           <Route path="*" element={<NotFoundPage scope="global" />} />
         </Route>
       </Routes>
-      <OnboardingWizard />
+      {!isHosted && <OnboardingWizard />}
     </>
   );
 }

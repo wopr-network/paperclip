@@ -11,11 +11,13 @@ export function healthRoutes(
     deploymentExposure: DeploymentExposure;
     authReady: boolean;
     companyDeletionEnabled: boolean;
+    hostedMode?: boolean;
   } = {
     deploymentMode: "local_trusted",
     deploymentExposure: "private",
     authReady: true,
     companyDeletionEnabled: true,
+    hostedMode: false,
   },
 ) {
   const router = Router();
@@ -28,7 +30,11 @@ export function healthRoutes(
 
     let bootstrapStatus: "ready" | "bootstrap_pending" = "ready";
     let bootstrapInviteActive = false;
-    if (opts.deploymentMode === "authenticated") {
+    if (opts.hostedMode) {
+      // Hosted instances are provisioned externally — skip bootstrap check
+      bootstrapStatus = "ready";
+      bootstrapInviteActive = false;
+    } else if (opts.deploymentMode === "authenticated") {
       const roleCount = await db
         .select({ count: count() })
         .from(instanceUserRoles)
