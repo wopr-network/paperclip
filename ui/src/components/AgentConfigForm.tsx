@@ -62,6 +62,8 @@ type AgentConfigFormProps = {
   hideInlineSave?: boolean;
   /** "cards" renders each section as heading + bordered card (for settings pages). Default: "inline" (border-b dividers). */
   sectionLayout?: "inline" | "cards";
+  /** When true, hide adapter type, model, command, and thinking effort controls — backend controls inference. */
+  hostedMode?: boolean;
 } & (
   | {
       mode: "create";
@@ -467,7 +469,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
       )}
 
       {/* ---- Adapter ---- */}
-      <div className={cn(!cards && (isCreate ? "border-t border-border" : "border-b border-border"))}>
+      {!props.hostedMode && <div className={cn(!cards && (isCreate ? "border-t border-border" : "border-b border-border"))}>
         <div className={cn(cards ? "flex items-center justify-between mb-3" : "px-4 py-2 flex items-center justify-between gap-2")}>
           {cards
             ? <h3 className="text-sm font-medium">Adapter</h3>
@@ -595,10 +597,10 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
           <uiAdapter.ConfigFields {...adapterFieldProps} />
         </div>
 
-      </div>
+      </div>}
 
       {/* ---- Permissions & Configuration ---- */}
-      {isLocal && (
+      {isLocal && !props.hostedMode && (
         <div className={cn(!cards && "border-b border-border")}>
           {cards
             ? <h3 className="text-sm font-medium mb-3">Permissions &amp; Configuration</h3>

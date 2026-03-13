@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams, useNavigate, Link, Navigate, useBeforeUnload } from "@/lib/router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { agentsApi, type AgentKey, type ClaudeLoginResult } from "../api/agents";
+import { healthApi } from "../api/health";
 import { heartbeatsApi } from "../api/heartbeats";
 import { ApiError } from "../api/client";
 import { ChartCard, RunActivityChart, PriorityChart, IssueStatusChart, SuccessRateChart } from "../components/ActivityCharts";
@@ -1047,6 +1048,13 @@ function ConfigurationTab({
   const [awaitingRefreshAfterSave, setAwaitingRefreshAfterSave] = useState(false);
   const lastAgentRef = useRef(agent);
 
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+    retry: false,
+  });
+  const isHosted = healthQuery.data?.hostedMode === true;
+
   const { data: adapterModels } = useQuery({
     queryKey:
       companyId
@@ -1097,6 +1105,7 @@ function ConfigurationTab({
         onCancelActionChange={onCancelActionChange}
         hideInlineSave
         sectionLayout="cards"
+        hostedMode={isHosted}
       />
 
       <div>

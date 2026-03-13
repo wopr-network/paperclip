@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "@/lib/router";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { agentsApi } from "../api/agents";
+import { healthApi } from "../api/health";
 import { queryKeys } from "../lib/queryKeys";
 import { AGENT_ROLES } from "@paperclipai/shared";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,13 @@ export function NewAgent() {
   const [roleOpen, setRoleOpen] = useState(false);
   const [reportsToOpen, setReportsToOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+    retry: false,
+  });
+  const isHosted = healthQuery.data?.hostedMode === true;
 
   const { data: agents } = useQuery({
     queryKey: queryKeys.agents.list(selectedCompanyId!),
@@ -309,6 +317,7 @@ export function NewAgent() {
           values={configValues}
           onChange={(patch) => setConfigValues((prev) => ({ ...prev, ...patch }))}
           adapterModels={adapterModels}
+          hostedMode={isHosted}
         />
 
         {/* Footer */}
