@@ -22,10 +22,23 @@ const logActivityMock = vi.fn();
 
 vi.mock("drizzle-orm", () => ({
   eq: vi.fn((...args: unknown[]) => args),
+  and: vi.fn((...args: unknown[]) => args),
 }));
 
 vi.mock("@paperclipai/db", () => ({
   authUsers: { id: "id" },
+  authAccounts: { id: "id", userId: "userId", accountId: "accountId", providerId: "providerId", password: "password", createdAt: "createdAt", updatedAt: "updatedAt" },
+}));
+
+vi.mock("better-auth/crypto", () => ({
+  hashPassword: vi.fn().mockResolvedValue("hashed-password"),
+}));
+
+vi.mock("node:fs/promises", () => ({
+  default: {
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+  },
 }));
 
 vi.mock("../services/index.js", () => ({
@@ -219,15 +232,19 @@ describe("provision routes", () => {
       expect(res.body.agents).toHaveLength(2);
       expect(agentSvcMock.create).toHaveBeenCalledTimes(2);
 
-      // Agent created with gateway adapter config
+      // Agent created with opencode_local adapter routed through gateway
       expect(agentSvcMock.create).toHaveBeenCalledWith(
         "comp-2",
         expect.objectContaining({
           name: "CEO",
           role: "ceo",
-          adapterType: "http",
+          adapterType: "opencode_local",
           adapterConfig: expect.objectContaining({
-            url: "https://api.wopr.network/v1",
+            model: expect.stringContaining("paperclip-gateway/"),
+            env: expect.objectContaining({
+              PAPERCLIP_GATEWAY_KEY: "sk-tenant-xyz",
+              OPENCODE_CONFIG_DIR: expect.any(String),
+            }),
           }),
         }),
       );
