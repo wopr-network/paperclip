@@ -4,6 +4,7 @@ import { useNavigate } from "@/lib/router";
 import { useDialog } from "../context/DialogContext";
 import { useCompany } from "../context/CompanyContext";
 import { agentsApi } from "../api/agents";
+import { healthApi } from "../api/health";
 import { queryKeys } from "../lib/queryKeys";
 import {
   Dialog,
@@ -90,6 +91,13 @@ export function NewAgentDialog() {
   const navigate = useNavigate();
   const [showAdvancedCards, setShowAdvancedCards] = useState(false);
 
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+    retry: false,
+  });
+  const isHosted = healthQuery.data?.hostedMode === true;
+
   const { data: agents } = useQuery({
     queryKey: queryKeys.agents.list(selectedCompanyId!),
     queryFn: () => agentsApi.list(selectedCompanyId!),
@@ -167,15 +175,17 @@ export function NewAgentDialog() {
                 Ask the CEO to create a new agent
               </Button>
 
-              {/* Advanced link */}
-              <div className="text-center">
-                <button
-                  className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
-                  onClick={handleAdvancedConfig}
-                >
-                  I want advanced configuration myself
-                </button>
-              </div>
+              {/* Advanced link — hidden in hosted mode, platform controls inference */}
+              {!isHosted && (
+                <div className="text-center">
+                  <button
+                    className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                    onClick={handleAdvancedConfig}
+                  >
+                    I want advanced configuration myself
+                  </button>
+                </div>
+              )}
             </>
           ) : (
             <>

@@ -6,6 +6,7 @@ import { useDialog } from "../context/DialogContext";
 import { useSidebar } from "../context/SidebarContext";
 import { issuesApi } from "../api/issues";
 import { agentsApi } from "../api/agents";
+import { healthApi } from "../api/health";
 import { projectsApi } from "../api/projects";
 import { queryKeys } from "../lib/queryKeys";
 import {
@@ -40,6 +41,13 @@ export function CommandPalette() {
   const { openNewIssue, openNewAgent } = useDialog();
   const { isMobile, setSidebarOpen } = useSidebar();
   const searchQuery = query.trim();
+
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+    retry: false,
+  });
+  const isHosted = healthQuery.data?.hostedMode === true;
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -120,15 +128,17 @@ export function CommandPalette() {
             Create new issue
             <span className="ml-auto text-xs text-muted-foreground">C</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() => {
-              setOpen(false);
-              openNewAgent();
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Create new agent
-          </CommandItem>
+          {!isHosted && (
+            <CommandItem
+              onSelect={() => {
+                setOpen(false);
+                openNewAgent();
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create new agent
+            </CommandItem>
+          )}
           <CommandItem onSelect={() => go("/projects")}>
             <Plus className="mr-2 h-4 w-4" />
             Create new project

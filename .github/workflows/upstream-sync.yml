@@ -1,0 +1,77 @@
+name: Upstream Sync
+
+on:
+  schedule:
+    # Daily at 06:00 UTC
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Sync mode"
+        required: true
+        default: "pr"
+        type: choice
+        options:
+          - pr
+          - push
+          - dry-run
+          - scan-only
+
+jobs:
+  sync:
+    runs-on: self-hosted
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout (full history for rebase)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: |
+          git remote get-url upstream 2>/dev/null || \
+            git remote add upstream https://github.com/paperclipai/paperclip.git
+          git fetch upstream
+
+      - name: Install Agent SDK
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          npm install @anthropic-ai/claude-agent-sdk
+
+      - name: Check for upstream changes
+        id: check
+        run: |
+          BEHIND=$(git rev-list HEAD..upstream/master --count)
+          echo "behind=$BEHIND" >> "$GITHUB_OUTPUT"
+          if [ "$BEHIND" -eq 0 ]; then
+            echo "Up to date with upstream. Skipping sync."
+          else
+            echo "Behind upstream by $BEHIND commits."
+          fi
+
+      - name: Run upstream sync
+        if: steps.check.outputs.behind != '0' || contains(fromJSON('["scan-only", "dry-run"]'), github.event.inputs.mode)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NODE_PATH: ${{ github.workspace }}/node_modules
+        run: |
+          MODE="${{ github.event.inputs.mode || 'pr' }}"
+          case "$MODE" in
+            push)     FLAG="--push" ;;
+            pr)       FLAG="--pr" ;;
+            dry-run)  FLAG="--dry-run" ;;
+            scan-only) FLAG="--scan-only --dry-run" ;;
+          esac
+          node scripts/upstream-sync.mjs $FLAG

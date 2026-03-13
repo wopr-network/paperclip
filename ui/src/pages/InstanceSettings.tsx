@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Clock3, ExternalLink, Settings } from "lucide-react";
 import type { InstanceSchedulerHeartbeatAgent } from "@paperclipai/shared";
-import { Link } from "@/lib/router";
+import { Link, Navigate } from "@/lib/router";
 import { heartbeatsApi } from "../api/heartbeats";
 import { agentsApi } from "../api/agents";
+import { healthApi } from "../api/health";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { EmptyState } from "../components/EmptyState";
 import { Badge } from "@/components/ui/badge";
@@ -31,12 +32,24 @@ export function InstanceSettings() {
   const queryClient = useQueryClient();
   const [actionError, setActionError] = useState<string | null>(null);
 
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+    retry: false,
+  });
+  const isHosted = healthQuery.data?.hostedMode === true;
+
   useEffect(() => {
     setBreadcrumbs([
       { label: "Instance Settings" },
       { label: "Heartbeats" },
     ]);
   }, [setBreadcrumbs]);
+
+  // Instance settings expose heartbeat/runtime controls — not for hosted mode
+  if (isHosted) {
+    return <Navigate to="/" replace />;
+  }
 
   const heartbeatsQuery = useQuery({
     queryKey: queryKeys.instance.schedulerHeartbeats,

@@ -205,10 +205,12 @@ export function Agents() {
               </button>
             </div>
           )}
-          <Button size="sm" variant="outline" onClick={openNewAgent}>
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            New Agent
-          </Button>
+          {!isHosted && (
+            <Button size="sm" variant="outline" onClick={openNewAgent}>
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              New Agent
+            </Button>
+          )}
         </div>
       </div>
 
@@ -221,9 +223,9 @@ export function Agents() {
       {agents && agents.length === 0 && (
         <EmptyState
           icon={Bot}
-          message="Create your first agent to get started."
-          action="New Agent"
-          onAction={openNewAgent}
+          message={isHosted ? "No agents configured yet." : "Create your first agent to get started."}
+          action={isHosted ? undefined : "New Agent"}
+          onAction={isHosted ? undefined : openNewAgent}
         />
       )}
 

@@ -6,6 +6,7 @@ import { useCompany } from "../context/CompanyContext";
 import { useDialog } from "../context/DialogContext";
 import { useSidebar } from "../context/SidebarContext";
 import { agentsApi } from "../api/agents";
+import { healthApi } from "../api/health";
 import { heartbeatsApi } from "../api/heartbeats";
 import { queryKeys } from "../lib/queryKeys";
 import { cn, agentRouteRef, agentUrl } from "../lib/utils";
@@ -44,6 +45,13 @@ export function SidebarAgents() {
   const { openNewAgent } = useDialog();
   const { isMobile, setSidebarOpen } = useSidebar();
   const location = useLocation();
+
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+    retry: false,
+  });
+  const isHosted = healthQuery.data?.hostedMode === true;
 
   const { data: agents } = useQuery({
     queryKey: queryKeys.agents.list(selectedCompanyId!),
@@ -91,7 +99,7 @@ export function SidebarAgents() {
               Agents
             </span>
           </CollapsibleTrigger>
-          <button
+          {!isHosted && <button
             onClick={(e) => {
               e.stopPropagation();
               openNewAgent();
@@ -100,7 +108,7 @@ export function SidebarAgents() {
             aria-label="New agent"
           >
             <Plus className="h-3 w-3" />
-          </button>
+          </button>}
         </div>
       </div>
 
