@@ -292,8 +292,8 @@ importers:
         specifier: workspace:*
         version: link:../packages/shared
       '@wopr-network/provision-server':
-        specifier: ^1.0.0
-        version: 1.0.4(express@5.2.1)
+        specifier: ^1.0.5
+        version: 1.0.5(express@5.2.1)
       better-auth:
         specifier: 1.4.18
         version: 1.4.18(drizzle-kit@0.31.9)(drizzle-orm@0.38.4(@types/react@19.2.14)(kysely@0.28.11)(pg@8.20.0)(postgres@3.4.8)(react@19.2.4))(pg@8.20.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.12.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
@@ -3138,8 +3138,8 @@ packages:
   '@vitest/utils@3.2.4':
     resolution: {integrity: sha512-fB2V0JFrQSMsCo9HiSq3Ezpdv4iYaXRG1Sx8edX3MwxfyNn83mKiGzOcH+Fkxt4MHxr3y42fQi1oeAInqgX2QA==}
 
-  '@wopr-network/provision-server@1.0.4':
-    resolution: {integrity: sha512-IJJRM134o91WBxTo78H849lAJLBN15Etl1j5gXhvNvpFq2ovlG4GYNBgOdb5dlwnC+m2n4fnRflwubQttIjf0Q==}
+  '@wopr-network/provision-server@1.0.5':
+    resolution: {integrity: sha512-ds2juKeo+CQXUhu9+zk6ymRdGFW3zWE4kkKn7ecSE039dAFzPSy5XcSHR349fyQYr6XeUS2FOh1I0/fOjIjqgQ==}
     peerDependencies:
       express: ^4.0.0 || ^5.0.0
 
@@ -8971,7 +8971,7 @@ snapshots:
       loupe: 3.2.1
       tinyrainbow: 2.0.0
 
-  '@wopr-network/provision-server@1.0.4(express@5.2.1)':
+  '@wopr-network/provision-server@1.0.5(express@5.2.1)':
     dependencies:
       express: 5.2.1
 
