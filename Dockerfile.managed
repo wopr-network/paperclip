@@ -41,8 +41,9 @@ WORKDIR /app
 COPY --chown=node:node --from=build /app /app
 RUN mkdir -p /paperclip && chown node:node /paperclip
 
-# Managed mode: platform-core provides inference — no need for local CLI agents
-# (claude-code, codex, opencode are not installed in managed image)
+# Install opencode globally — the opencode_local adapter spawns `opencode run`
+# to execute agents, routing inference through the metered gateway.
+RUN npm install -g opencode-ai@latest
 
 ENV NODE_ENV=production \
   HOME=/paperclip \

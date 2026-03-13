@@ -243,6 +243,7 @@ describe("provision routes", () => {
             model: expect.stringContaining("paperclip-gateway/"),
             env: expect.objectContaining({
               PAPERCLIP_GATEWAY_KEY: "sk-tenant-xyz",
+              OPENCODE_CONFIG_DIR: expect.any(String),
             }),
           }),
         }),

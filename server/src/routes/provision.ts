@@ -19,15 +19,18 @@ import { companyService, agentService, accessService, logActivity } from "../ser
 /** Default model for hosted agents routed through the metered gateway. */
 const DEFAULT_GATEWAY_MODEL = "anthropic/claude-sonnet-4-20250514";
 
+/** Directory where we persist the OpenCode gateway provider config. */
+const GATEWAY_CONFIG_DIR = path.join(process.env.PAPERCLIP_HOME ?? "/data", ".opencode-gateway");
+
 /**
  * Write an opencode.json that configures our metered inference gateway as an
- * OpenAI-compatible provider.  OpenCode picks this up from the project cwd;
- * placing it in the Paperclip data root means every workspace beneath it
- * inherits the config.
+ * OpenAI-compatible provider.  We write it to a dedicated directory and pass
+ * OPENCODE_CONFIG_DIR via the adapter env so OpenCode finds it regardless of
+ * which workspace cwd the agent runs in (OpenCode only walks up to the nearest
+ * .git boundary, which won't reach a parent config).
  */
 async function ensureGatewayProviderConfig(gatewayUrl: string): Promise<void> {
-  const dataDir = process.env.PAPERCLIP_HOME ?? "/data";
-  const configPath = path.join(dataDir, "opencode.json");
+  const configPath = path.join(GATEWAY_CONFIG_DIR, "opencode.json");
   const config = {
     $schema: "https://opencode.ai/config.json",
     provider: {
@@ -48,7 +51,7 @@ async function ensureGatewayProviderConfig(gatewayUrl: string): Promise<void> {
     },
     model: `paperclip-gateway/${DEFAULT_GATEWAY_MODEL}`,
   };
-  await fs.mkdir(dataDir, { recursive: true });
+  await fs.mkdir(GATEWAY_CONFIG_DIR, { recursive: true });
   await fs.writeFile(configPath, JSON.stringify(config, null, 2) + "\n");
 }
 
@@ -149,6 +152,7 @@ function createPaperclipAdapter(db: Db): ProvisionAdapter {
             model: `paperclip-gateway/${DEFAULT_GATEWAY_MODEL}`,
             env: {
               PAPERCLIP_GATEWAY_KEY: gateway.apiKey,
+              OPENCODE_CONFIG_DIR: GATEWAY_CONFIG_DIR,
             },
           },
           budgetMonthlyCents: spec.budgetMonthlyCents ?? 0,
