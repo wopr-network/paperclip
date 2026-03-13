@@ -1,6 +1,10 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { Db } from "@paperclipai/db";
-import { authUsers } from "@paperclipai/db";
+import { authUsers, authAccounts } from "@paperclipai/db";
+import { randomUUID } from "node:crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { hashPassword } from "better-auth/crypto";
 import {
   createProvisionRouter,
   type ProvisionAdapter,
@@ -12,12 +16,48 @@ import {
 } from "@wopr-network/provision-server";
 import { companyService, agentService, accessService, logActivity } from "../services/index.js";
 
+/** Default model for hosted agents routed through the metered gateway. */
+const DEFAULT_GATEWAY_MODEL = "anthropic/claude-sonnet-4-20250514";
+
+/**
+ * Write an opencode.json that configures our metered inference gateway as an
+ * OpenAI-compatible provider.  OpenCode picks this up from the project cwd;
+ * placing it in the Paperclip data root means every workspace beneath it
+ * inherits the config.
+ */
+async function ensureGatewayProviderConfig(gatewayUrl: string): Promise<void> {
+  const dataDir = process.env.PAPERCLIP_HOME ?? "/data";
+  const configPath = path.join(dataDir, "opencode.json");
+  const config = {
+    $schema: "https://opencode.ai/config.json",
+    provider: {
+      "paperclip-gateway": {
+        npm: "@ai-sdk/openai-compatible",
+        name: "Paperclip Gateway",
+        options: {
+          baseURL: gatewayUrl,
+          apiKey: "{env:PAPERCLIP_GATEWAY_KEY}",
+        },
+        models: {
+          [DEFAULT_GATEWAY_MODEL]: {
+            name: "Claude Sonnet 4",
+            limit: { context: 200000, output: 16384 },
+          },
+        },
+      },
+    },
+    model: `paperclip-gateway/${DEFAULT_GATEWAY_MODEL}`,
+  };
+  await fs.mkdir(dataDir, { recursive: true });
+  await fs.writeFile(configPath, JSON.stringify(config, null, 2) + "\n");
+}
+
 /**
  * Paperclip adapter for the generic provision-server protocol.
  *
  * Maps generic provisioning operations to Paperclip's domain model:
  *   tenant → company
- *   agents → agents (with http adapter pointing at gateway)
+ *   agents → agents (opencode_local adapter routed through metered gateway)
  */
 function createPaperclipAdapter(db: Db): ProvisionAdapter {
   const companies = companyService(db);
@@ -42,14 +82,36 @@ function createPaperclipAdapter(db: Db): ProvisionAdapter {
         .where(eq(authUsers.id, user.id))
         .then((rows) => rows[0] ?? null);
 
+      const now = new Date();
       if (!existing) {
-        const now = new Date();
         await db.insert(authUsers).values({
           id: user.id,
           name: user.name ?? user.email,
           email: user.email,
           emailVerified: true,
           image: null,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+
+      // Ensure a credential account exists so the admin can sign in.
+      // Password is a random UUID — admin must use "forgot password" to set theirs.
+      const existingAccount = await db
+        .select({ id: authAccounts.id })
+        .from(authAccounts)
+        .where(and(eq(authAccounts.userId, user.id), eq(authAccounts.providerId, "credential")))
+        .then((rows) => rows[0] ?? null);
+
+      if (!existingAccount) {
+        const hash = await hashPassword(randomUUID());
+
+        await db.insert(authAccounts).values({
+          id: randomUUID(),
+          accountId: user.id,
+          providerId: "credential",
+          userId: user.id,
+          password: hash,
           createdAt: now,
           updatedAt: now,
         });
@@ -66,20 +128,28 @@ function createPaperclipAdapter(db: Db): ProvisionAdapter {
       specs: AgentSpec[],
       gateway: { url: string; apiKey: string },
     ): Promise<CreatedAgent[]> {
+      // Ensure the gateway provider config exists so OpenCode can resolve
+      // the "paperclip-gateway" provider at agent execution time.
+      await ensureGatewayProviderConfig(gateway.url);
+
       const created: CreatedAgent[] = [];
       const nameToId = new Map<string, string>();
 
-      // First pass: create agents
+      // First pass: create agents with the opencode_local adapter.
+      // The gateway key is passed via env so the AI SDK provider picks it up
+      // through the {env:PAPERCLIP_GATEWAY_KEY} reference in opencode.json.
       for (const spec of specs) {
         if (!spec.name || !spec.role) continue;
         const agent = await agents.create(tenantEntityId, {
           name: spec.name,
           role: spec.role,
           title: spec.title ?? null,
-          adapterType: "http",
+          adapterType: "opencode_local",
           adapterConfig: {
-            url: gateway.url,
-            headers: { Authorization: `Bearer ${gateway.apiKey}` },
+            model: `paperclip-gateway/${DEFAULT_GATEWAY_MODEL}`,
+            env: {
+              PAPERCLIP_GATEWAY_KEY: gateway.apiKey,
+            },
           },
           budgetMonthlyCents: spec.budgetMonthlyCents ?? 0,
           status: "idle",

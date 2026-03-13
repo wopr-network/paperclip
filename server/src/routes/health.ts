@@ -67,6 +67,7 @@ export function healthRoutes(
       authReady: opts.authReady,
       bootstrapStatus,
       bootstrapInviteActive,
+      hostedMode: opts.hostedMode ?? false,
       features: {
         companyDeletionEnabled: opts.companyDeletionEnabled,
       },

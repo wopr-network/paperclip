@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Navigate, Outlet, Route, Routes, useLocation, useParams } from "@/lib/router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Layout } from "./components/Layout";
 import { OnboardingWizard } from "./components/OnboardingWizard";
@@ -307,6 +307,14 @@ function NoCompaniesStartPage({ autoOpen = true }: { autoOpen?: boolean }) {
 }
 
 function HostedProvisioningPage() {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [queryClient]);
+
   return (
     <div className="mx-auto max-w-xl py-10">
       <div className="rounded-lg border border-border bg-card p-6">
