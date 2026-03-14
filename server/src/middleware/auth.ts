@@ -19,10 +19,41 @@ interface ActorMiddlewareOptions {
 
 export function actorMiddleware(db: Db, opts: ActorMiddlewareOptions): RequestHandler {
   return async (req, _res, next) => {
-    req.actor =
-      opts.deploymentMode === "local_trusted"
-        ? { type: "board", userId: "local-board", isInstanceAdmin: true, source: "local_implicit" }
-        : { type: "none", source: "none" };
+    if (opts.deploymentMode === "local_trusted") {
+      req.actor = { type: "board", userId: "local-board", isInstanceAdmin: true, source: "local_implicit" };
+    } else if (opts.deploymentMode === "hosted_proxy") {
+      const proxiedUserId = req.header("x-paperclip-user-id");
+      if (proxiedUserId) {
+        const [roleRow, memberships] = await Promise.all([
+          db
+            .select({ id: instanceUserRoles.id })
+            .from(instanceUserRoles)
+            .where(and(eq(instanceUserRoles.userId, proxiedUserId), eq(instanceUserRoles.role, "instance_admin")))
+            .then((rows) => rows[0] ?? null),
+          db
+            .select({ companyId: companyMemberships.companyId })
+            .from(companyMemberships)
+            .where(
+              and(
+                eq(companyMemberships.principalType, "user"),
+                eq(companyMemberships.principalId, proxiedUserId),
+                eq(companyMemberships.status, "active"),
+              ),
+            ),
+        ]);
+        req.actor = {
+          type: "board",
+          userId: proxiedUserId,
+          companyIds: memberships.map((row) => row.companyId),
+          isInstanceAdmin: Boolean(roleRow),
+          source: "hosted_proxy",
+        };
+      } else {
+        req.actor = { type: "none", source: "none" };
+      }
+    } else {
+      req.actor = { type: "none", source: "none" };
+    }
 
     const runIdHeader = req.header("x-paperclip-run-id");
 
