@@ -4,6 +4,7 @@ import { useCompany } from "../context/CompanyContext";
 import { useDialog } from "../context/DialogContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { companiesApi } from "../api/companies";
+import { healthApi } from "../api/health";
 import { queryKeys } from "../lib/queryKeys";
 import { formatCents, relativeTime } from "../lib/utils";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,13 @@ export function Companies() {
   const { openOnboarding } = useDialog();
   const { setBreadcrumbs } = useBreadcrumbs();
   const queryClient = useQueryClient();
+
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+    retry: false,
+  });
+  const isHosted = healthQuery.data?.hostedMode === true;
 
   const { data: stats } = useQuery({
     queryKey: queryKeys.companies.stats,
@@ -89,12 +97,14 @@ export function Companies() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end">
-        <Button size="sm" onClick={() => openOnboarding()}>
-          <Plus className="h-3.5 w-3.5 mr-1.5" />
-          New Company
-        </Button>
-      </div>
+      {!isHosted && (
+        <div className="flex items-center justify-end">
+          <Button size="sm" onClick={() => openOnboarding()}>
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            New Company
+          </Button>
+        </div>
+      )}
 
       <div className="h-6">
         {loading && <p className="text-sm text-muted-foreground">Loading companies...</p>}
@@ -217,14 +227,18 @@ export function Companies() {
                         <Pencil className="h-3.5 w-3.5" />
                         Rename
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        variant="destructive"
-                        onClick={() => setConfirmDeleteId(company.id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Delete Company
-                      </DropdownMenuItem>
+                      {!isHosted && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => setConfirmDeleteId(company.id)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Delete Company
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>

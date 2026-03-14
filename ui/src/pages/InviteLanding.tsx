@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams } from "@/lib/router";
+import { Link, Navigate, useParams } from "@/lib/router";
 import { accessApi } from "../api/access";
 import { authApi } from "../api/auth";
 import { healthApi } from "../api/health";
@@ -115,6 +115,8 @@ export function InviteLandingPage() {
       setError(err instanceof Error ? err.message : "Failed to accept invite");
     },
   });
+
+  if (isHosted) return <Navigate to="/" replace />;
 
   if (!token) {
     return <div className="mx-auto max-w-xl py-10 text-sm text-destructive">Invalid invite token.</div>;

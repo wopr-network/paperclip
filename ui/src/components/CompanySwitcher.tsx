@@ -1,6 +1,9 @@
 import { ChevronsUpDown, Plus, Settings } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@/lib/router";
 import { useCompany } from "../context/CompanyContext";
+import { healthApi } from "../api/health";
+import { queryKeys } from "../lib/queryKeys";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +30,13 @@ function statusDotColor(status?: string): string {
 export function CompanySwitcher() {
   const { companies, selectedCompany, setSelectedCompanyId } = useCompany();
   const sidebarCompanies = companies.filter((company) => company.status !== "archived");
+
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+    retry: false,
+  });
+  const isHosted = healthQuery.data?.hostedMode === true;
 
   return (
     <DropdownMenu>
@@ -62,19 +72,23 @@ export function CompanySwitcher() {
         {sidebarCompanies.length === 0 && (
           <DropdownMenuItem disabled>No companies</DropdownMenuItem>
         )}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to="/company/settings" className="no-underline text-inherit">
-            <Settings className="h-4 w-4 mr-2" />
-            Company Settings
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/companies" className="no-underline text-inherit">
-            <Plus className="h-4 w-4 mr-2" />
-            Manage Companies
-          </Link>
-        </DropdownMenuItem>
+        {!isHosted && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/company/settings" className="no-underline text-inherit">
+                <Settings className="h-4 w-4 mr-2" />
+                Company Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/companies" className="no-underline text-inherit">
+                <Plus className="h-4 w-4 mr-2" />
+                Manage Companies
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

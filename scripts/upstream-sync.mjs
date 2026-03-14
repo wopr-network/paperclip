@@ -325,6 +325,15 @@ function scanForHostedModeGaps() {
     "runtime_config",
     "deploymentMode.*local",
     "initializeBoardClaim",
+    "CompanySettings",
+    "CompanySwitcher",
+    "InviteLanding",
+    "createInvite",
+    "inviteLink",
+    "joinRequest",
+    "boardClaim",
+    "BoardClaim",
+    "manageMembers",
   ];
 
   const pattern = infraKeywords.join("|");

@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams, useSearchParams } from "@/lib/router";
+import { Link, Navigate, useParams, useSearchParams } from "@/lib/router";
 import { accessApi } from "../api/access";
 import { authApi } from "../api/auth";
+import { healthApi } from "../api/health";
 import { queryKeys } from "../lib/queryKeys";
 import { Button } from "@/components/ui/button";
 
@@ -16,6 +17,13 @@ export function BoardClaimPage() {
     () => `/board-claim/${encodeURIComponent(token)}${code ? `?code=${encodeURIComponent(code)}` : ""}`,
     [token, code],
   );
+
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+    retry: false,
+  });
+  const isHosted = healthQuery.data?.hostedMode === true;
 
   const sessionQuery = useQuery({
     queryKey: queryKeys.auth.session,
@@ -39,6 +47,8 @@ export function BoardClaimPage() {
       await statusQuery.refetch();
     },
   });
+
+  if (isHosted) return <Navigate to="/" replace />;
 
   if (!token || !code) {
     return <div className="mx-auto max-w-xl py-10 text-sm text-destructive">Invalid board claim URL.</div>;

@@ -12,7 +12,7 @@ declare global {
         isInstanceAdmin?: boolean;
         keyId?: string;
         runId?: string;
-        source?: "local_implicit" | "session" | "agent_key" | "agent_jwt" | "none";
+        source?: "local_implicit" | "session" | "hosted_proxy" | "agent_key" | "agent_jwt" | "none";
       };
     }
   }
