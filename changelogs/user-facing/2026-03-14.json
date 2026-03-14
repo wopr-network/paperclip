@@ -1,0 +1,12 @@
+{
+  "version": "2026-03-14",
+  "date": "2026-03-14",
+  "sections": [
+    {
+      "title": "Fixed",
+      "items": [
+        "set AGENT_HOME env var for agent processes"
+      ]
+    }
+  ]
+}

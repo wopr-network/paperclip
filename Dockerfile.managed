@@ -39,6 +39,8 @@ RUN test -f server/dist/index.js || (echo "ERROR: server build output missing" &
 FROM base AS production
 WORKDIR /app
 COPY --chown=node:node --from=build /app /app
+COPY changelogs/user-facing/ /app/changelogs/
+RUN test -L /app/changelogs/latest.json || test -f /app/changelogs/latest.json || echo "WARN: latest.json not found"
 RUN mkdir -p /paperclip /data && chown -R node:node /paperclip /data
 
 # Install opencode globally — the opencode_local adapter spawns `opencode run`

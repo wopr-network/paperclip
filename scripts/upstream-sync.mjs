@@ -595,12 +595,24 @@ async function main() {
     }
   }
 
-  // Commit any gap fixes
+  // Generate changelogs
+  if (!DRY_RUN && !SCAN_ONLY) {
+    log("Generating changelogs...");
+    const changelogResult = tryRun("node scripts/generate-changelog.mjs");
+    if (changelogResult.ok) {
+      log("Changelog generation succeeded.");
+    } else {
+      log(`Changelog generation failed (non-fatal): ${changelogResult.output.slice(0, 500)}`);
+    }
+  }
+
+  // Commit any gap fixes + changelogs
   if (!DRY_RUN && !SCAN_ONLY) {
     const fixedFiles = run("git status --porcelain");
     if (fixedFiles) {
-      log("Committing hostedMode gap fixes...");
+      log("Committing hostedMode gap fixes and changelogs...");
       run("git add ui/src/");
+      run("git add changelogs/");
       tryRun(
         `git commit -m "fix: add hostedMode guards for new upstream UI elements"`,
       );
