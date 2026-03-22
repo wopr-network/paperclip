@@ -161,12 +161,12 @@ describe("provision member routes", () => {
         "active",
       );
 
-      // setPrincipalGrants with member permissions (tasks:assign + joins:approve)
+      // setPrincipalGrants with member permissions
       expect(accessSvcMock.setPrincipalGrants).toHaveBeenCalledWith(
         "comp-1",
         "user",
         "user-1",
-        [{ permissionKey: "tasks:assign" }, { permissionKey: "joins:approve" }],
+        [{ permissionKey: "agents:create" }, { permissionKey: "tasks:assign" }, { permissionKey: "tasks:assign_scope" }],
         null,
       );
 
@@ -326,7 +326,7 @@ describe("provision member routes", () => {
         "comp-1",
         "user",
         "user-1",
-        expect.arrayContaining([{ permissionKey: "company:delete" }]),
+        expect.arrayContaining([{ permissionKey: "joins:approve" }]),
         null,
       );
     });
@@ -354,7 +354,7 @@ describe("provision member routes", () => {
         "comp-1",
         "user",
         "user-1",
-        [{ permissionKey: "tasks:assign" }, { permissionKey: "joins:approve" }],
+        [{ permissionKey: "agents:create" }, { permissionKey: "tasks:assign" }, { permissionKey: "tasks:assign_scope" }],
         null,
       );
     });
