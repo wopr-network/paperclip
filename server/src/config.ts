@@ -119,12 +119,16 @@ export function loadConfig(): Config {
       ? process.env.PAPERCLIP_STORAGE_S3_FORCE_PATH_STYLE === "true"
       : (fileStorage?.s3?.forcePathStyle ?? false);
 
+  const hostedMode = process.env.PAPERCLIP_HOSTED_MODE === "true";
   const deploymentModeFromEnvRaw = process.env.PAPERCLIP_DEPLOYMENT_MODE;
   const deploymentModeFromEnv =
     deploymentModeFromEnvRaw && DEPLOYMENT_MODES.includes(deploymentModeFromEnvRaw as DeploymentMode)
       ? (deploymentModeFromEnvRaw as DeploymentMode)
       : null;
-  const deploymentMode: DeploymentMode = deploymentModeFromEnv ?? fileConfig?.server.deploymentMode ?? "local_trusted";
+  // Hosted mode forces hosted_proxy — any image works as a managed instance
+  const deploymentMode: DeploymentMode = hostedMode
+    ? "hosted_proxy"
+    : (deploymentModeFromEnv ?? fileConfig?.server.deploymentMode ?? "local_trusted");
   const deploymentExposureFromEnvRaw = process.env.PAPERCLIP_DEPLOYMENT_EXPOSURE;
   const deploymentExposureFromEnv =
     deploymentExposureFromEnvRaw &&
@@ -253,6 +257,6 @@ export function loadConfig(): Config {
     heartbeatSchedulerEnabled: process.env.HEARTBEAT_SCHEDULER_ENABLED !== "false",
     heartbeatSchedulerIntervalMs: Math.max(10000, Number(process.env.HEARTBEAT_SCHEDULER_INTERVAL_MS) || 30000),
     companyDeletionEnabled,
-    hostedMode: process.env.PAPERCLIP_HOSTED_MODE === "true",
+    hostedMode,
   };
 }

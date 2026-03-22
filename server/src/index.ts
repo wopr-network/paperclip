@@ -423,7 +423,7 @@ export async function startServer(): Promise<StartedServer> {
     }
   }
   
-  let authReady = config.deploymentMode === "local_trusted";
+  let authReady = config.deploymentMode === "local_trusted" || config.deploymentMode === "hosted_proxy";
   let betterAuthHandler: RequestHandler | undefined;
   let resolveSession:
     | ((req: ExpressRequest) => Promise<BetterAuthSessionResult | null>)
