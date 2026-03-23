@@ -50,6 +50,32 @@ function claudeSkillsHome(): string {
   return path.join(os.homedir(), ".claude", "skills");
 }
 
+/**
+ * Ensure Claude Code's settings allow all tools in non-interactive mode.
+ * Managed containers have no pre-existing settings, so tool calls are
+ * auto-rejected when there's no interactive terminal to approve them.
+ * We write a minimal settings.local.json that grants blanket approval.
+ */
+async function ensureClaudeSettingsAllowAllTools(): Promise<void> {
+  const settingsPath = path.join(os.homedir(), ".claude", "settings.local.json");
+  try {
+    const raw = await fs.readFile(settingsPath, "utf-8");
+    const parsed = JSON.parse(raw);
+    if (parsed?.permissions?.allowAll === true) return;
+    // Merge allowAll into existing settings
+    parsed.permissions = { ...parsed.permissions, allowAll: true };
+    await fs.writeFile(settingsPath, JSON.stringify(parsed, null, 2) + "\n");
+  } catch {
+    // File doesn't exist or is invalid — write fresh
+    const dir = path.dirname(settingsPath);
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(
+      settingsPath,
+      JSON.stringify({ permissions: { allowAll: true } }, null, 2) + "\n",
+    );
+  }
+}
+
 async function ensureOpenCodeSkillsInjected(
   onLog: AdapterExecutionContext["onLog"],
   skillsEntries: Array<{ key: string; runtimeName: string; source: string }>,
@@ -118,6 +144,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   await ensureAbsoluteDirectory(cwd, { createIfMissing: true });
   const openCodeSkillEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
   const desiredOpenCodeSkillNames = resolvePaperclipDesiredSkillNames(config, openCodeSkillEntries);
+  await ensureClaudeSettingsAllowAllTools();
   await ensureOpenCodeSkillsInjected(
     onLog,
     openCodeSkillEntries,
