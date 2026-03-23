@@ -62,3 +62,18 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    name: Pre-pull managed image
+    runs-on: self-hosted
+    needs: build-and-push
+    steps:
+      - name: Pull latest managed image on production
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: deploy
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            docker pull ghcr.io/wopr-network/paperclip:managed
+            docker image prune -f
