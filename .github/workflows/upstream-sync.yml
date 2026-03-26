@@ -38,6 +38,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Nuke stale credential helpers on self-hosted runner (prevents "denied to TSavo")
+          git config --local --unset-all credential.helper 2>/dev/null || true
+          git config --global --unset-all credential.helper 2>/dev/null || true
 
       - name: Clean working tree (self-hosted runner may have leftovers)
         run: |

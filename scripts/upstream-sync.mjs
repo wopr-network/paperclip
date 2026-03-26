@@ -490,11 +490,15 @@ function pushOrPr() {
   // Configure git to use GH_TOKEN for push auth (self-hosted runners have stale cached creds)
   const ghToken = process.env.GH_TOKEN;
   if (ghToken) {
-    // Disable any credential helper that might override URL-embedded token
+    // Kill credential helpers at every level — self-hosted runners persist global/system creds
     tryRun("git config --local --unset-all credential.helper");
-    tryRun("git config --local credential.helper ''");
-    run(`git remote set-url origin https://x-access-token:${ghToken}@github.com/wopr-network/paperclip.git`);
-    log("Configured origin remote with GH_TOKEN for push auth.");
+    tryRun("git config --global --unset-all credential.helper");
+    // Inject Authorization header directly — bypasses all credential stores entirely
+    // This is the same mechanism actions/checkout@v4 uses internally
+    const basicAuth = Buffer.from(`x-access-token:${ghToken}`).toString("base64");
+    tryRun("git config --local --unset-all http.https://github.com/.extraheader");
+    run(`git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic ${basicAuth}"`);
+    log("Configured git auth via extraheader (bypasses credential helpers).");
   }
 
   if (AUTO_PUSH) {
