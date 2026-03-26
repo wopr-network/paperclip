@@ -224,7 +224,7 @@ hostedMode={isHosted}
 // Rebase
 // ---------------------------------------------------------------------------
 
-async function rebase() {
+async function mergeUpstream() {
   log("Fetching upstream...");
   run("git fetch upstream");
 
@@ -233,7 +233,7 @@ async function rebase() {
 
   if (behind === 0) {
     log("Already up to date with upstream.");
-    return { rebased: false, behind: 0, ahead };
+    return { merged: false, behind: 0, ahead };
   }
 
   log(`Behind upstream by ${behind} commits, ahead by ${ahead} commits.`);
@@ -245,32 +245,34 @@ async function rebase() {
   run(`git branch ${backupBranch}`);
   log(`Backup: ${backupBranch}`);
 
-  // Attempt rebase
-  log("Rebasing onto upstream/master...");
-  const rebaseResult = tryRun("git rebase upstream/master");
+  // Attempt merge (far fewer conflicts than rebase for fork with many custom commits)
+  log("Merging upstream/master...");
+  const mergeResult = tryRun("git merge upstream/master --no-edit");
 
-  if (rebaseResult.ok) {
-    log("Rebase succeeded cleanly.");
-    return { rebased: true, behind, ahead };
+  if (mergeResult.ok) {
+    log("Merge succeeded cleanly.");
+    return { merged: true, behind, ahead };
   }
 
   // Conflicts — invoke agent
-  log("Rebase has conflicts. Invoking agent to resolve...");
+  log("Merge has conflicts. Invoking agent to resolve...");
 
   const conflicting = tryRun("git diff --name-only --diff-filter=U");
   const conflictFiles = conflicting.ok ? conflicting.output : "unknown";
 
   await runAgent(
-    `You are resolving git rebase conflicts in a Paperclip fork.
+    `You are resolving git merge conflicts in a Paperclip fork.
 
 ${HOSTED_MODE_CONTEXT}
 
 ## Conflict Resolution Rules
 
 1. TAKE all of upstream's functional changes (new features, bug fixes, refactors, new data models)
-2. REAPPLY our hostedMode guards on top of upstream's changes
-3. If upstream refactored a data model we were guarding (e.g. renamed a variable), adapt our guard to the new model
-4. Never drop upstream functionality — only add hosted-mode conditionals around infra UI
+2. KEEP our hostedMode guards — merge both sides when conflicts involve our guards vs upstream changes
+3. If upstream and our fork both added imports, keep both
+4. If upstream removed something we were guarding, take upstream's removal
+5. If upstream refactored a type/interface we extended, adapt our extension to the new shape
+6. Never drop upstream functionality — only add hosted-mode conditionals around infra UI
 
 ## Current Conflicts
 
@@ -282,22 +284,21 @@ ${conflictFiles}
 1. For each conflicting file, read it and find the conflict markers (<<<<<<< / ======= / >>>>>>>)
 2. Resolve each conflict following the rules above
 3. Run: git add <resolved-file>
-4. After ALL conflicts are resolved, run: git rebase --continue
-5. If new conflicts appear, repeat
-6. Continue until the rebase completes
+4. After ALL conflicts are resolved, run: git commit --no-edit
+5. Verify no conflict markers remain: grep -r '<<<<<<' ui/ server/ || echo "clean"
 
-IMPORTANT: Do NOT use git rebase --abort. Resolve all conflicts.`,
-    { model: "claude-haiku-4-5-20251001", phase: "rebase-conflicts" },
+IMPORTANT: Do NOT use git merge --abort. Resolve all conflicts.`,
+    { model: "claude-haiku-4-5-20251001", phase: "merge-conflicts" },
   );
 
-  // Verify rebase completed
-  const status = tryRun("git rebase --show-current-patch");
-  if (status.ok) {
-    die("Rebase still in progress after agent intervention. Manual resolution needed.");
+  // Verify merge completed
+  const status = tryRun("git diff --name-only --diff-filter=U");
+  if (status.ok && status.output.trim()) {
+    die("Merge conflicts remain after agent intervention. Manual resolution needed.");
   }
 
-  log("Rebase completed after conflict resolution.");
-  return { rebased: true, behind, ahead };
+  log("Merge completed after conflict resolution.");
+  return { merged: true, behind, ahead };
 }
 
 // ---------------------------------------------------------------------------
@@ -576,10 +577,10 @@ async function main() {
   }
 
   if (!SCAN_ONLY) {
-    // Rebase
-    const { rebased, behind } = await rebase();
+    // Merge upstream
+    const { merged, behind } = await mergeUpstream();
 
-    if (!rebased && behind === 0) {
+    if (!merged && behind === 0) {
       // Still scan for gaps even if up to date
       log("Checking for hostedMode gaps anyway...");
     }
