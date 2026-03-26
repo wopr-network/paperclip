@@ -634,8 +634,7 @@ async function main() {
     const fixedFiles = run("git status --porcelain");
     if (fixedFiles) {
       log("Committing hostedMode gap fixes and changelogs...");
-      run("git add ui/src/");
-      run("git add changelogs/");
+      run("git add -A");
       tryRun(
         `git commit -m "fix: add hostedMode guards for new upstream UI elements"`,
       );
