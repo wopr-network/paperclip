@@ -539,7 +539,7 @@ function pushOrPr() {
     ].join("\n");
 
     const pr = tryRun(
-      `gh pr create --title "sync: rebase on upstream (${datestamp})" --body "${prBody.replace(/"/g, '\\"')}" --base master`,
+      `gh pr create --repo wopr-network/paperclip --title "sync: rebase on upstream (${datestamp})" --body "${prBody.replace(/"/g, '\\"')}" --base master`,
     );
     if (pr.ok) {
       log(`PR created: ${pr.output}`);
