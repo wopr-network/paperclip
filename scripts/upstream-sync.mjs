@@ -127,7 +127,7 @@ async function runAgent(prompt, opts = {}) {
   let result = "";
   let turnCount = 0;
 
-  log(`Agent [${phase}] starting (model: ${opts.model ?? "claude-sonnet-4-6"}, maxTurns: ${opts.maxTurns ?? 60})`);
+  log(`Agent [${phase}] starting (model: ${opts.model ?? "claude-haiku-4-5-20251001"}, maxTurns: ${opts.maxTurns ?? 60})`);
   logEvent(phase, { type: "agent_start", model: opts.model, maxTurns: opts.maxTurns ?? 60 });
 
   for await (const message of _query({
@@ -138,7 +138,7 @@ async function runAgent(prompt, opts = {}) {
       permissionMode: "bypassPermissions",
       allowDangerouslySkipPermissions: true,
       maxTurns: opts.maxTurns ?? 60,
-      model: opts.model ?? "claude-sonnet-4-6",
+      model: opts.model ?? "claude-haiku-4-5-20251001",
     },
   })) {
     // Log every event type from the SDK
@@ -290,7 +290,7 @@ ${conflictFiles}
 6. Continue until the rebase completes
 
 IMPORTANT: Do NOT use git rebase --abort. Resolve all conflicts.`,
-    { model: "claude-sonnet-4-6", maxTurns: 80, phase: "rebase-conflicts" },
+    { model: "claude-haiku-4-5-20251001", maxTurns: 80, phase: "rebase-conflicts" },
   );
 
   // Verify rebase completed
@@ -411,7 +411,7 @@ For each file:
 
 After fixing all files, verify no TypeScript imports are missing.
 Do NOT modify files that don't need changes.`,
-    { model: "claude-sonnet-4-6", phase: "hostedmode-fix" },
+    { model: "claude-haiku-4-5-20251001", phase: "hostedmode-fix" },
   );
 }
 
@@ -462,7 +462,7 @@ Common issues:
 - JSX conditional rendering syntax errors
 
 Fix each error. Do NOT remove hostedMode guards to fix errors — fix the guard implementation instead.`,
-    { model: "claude-sonnet-4-6", phase: "build-fix" },
+    { model: "claude-haiku-4-5-20251001", phase: "build-fix" },
   );
 
   // Re-check
