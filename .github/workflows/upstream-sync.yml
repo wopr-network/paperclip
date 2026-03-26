@@ -57,10 +57,15 @@ jobs:
 
       - name: Install Agent SDK
         run: |
-          npm cache clean --force 2>/dev/null || true
-          rm -rf "$(npm root -g)/@anthropic-ai/claude-code" "$(npm root -g)/@anthropic-ai/claude-agent-sdk" 2>/dev/null || true
-          npm install -g @anthropic-ai/claude-code
-          npm install -g @anthropic-ai/claude-agent-sdk
+          rm -rf "$(npm root -g)/@anthropic-ai/.claude-code-"* "$(npm root -g)/@anthropic-ai/.claude-agent-sdk-"* 2>/dev/null || true
+          npm install -g @anthropic-ai/claude-code || npm install -g @anthropic-ai/claude-code
+          npm install -g @anthropic-ai/claude-agent-sdk || npm install -g @anthropic-ai/claude-agent-sdk
+          node -e "require('@anthropic-ai/claude-agent-sdk')" 2>/dev/null || echo "SDK import check: will resolve at runtime via global root"
+
+      - name: Write Claude credentials
+        run: |
+          mkdir -p ~/.claude
+          echo '${{ secrets.CLAUDE_CREDENTIALS_JSON }}' > ~/.claude/.credentials.json
 
       - name: Check for upstream changes
         id: check
