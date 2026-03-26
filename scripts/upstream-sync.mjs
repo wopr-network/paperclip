@@ -137,26 +137,23 @@ async function runAgent(prompt, opts = {}) {
       allowedTools: tools,
       permissionMode: "bypassPermissions",
       allowDangerouslySkipPermissions: true,
-      maxTurns: opts.maxTurns ?? 60,
+      maxTurns: opts.maxTurns ?? 200,
       model: opts.model ?? "claude-haiku-4-5-20251001",
     },
   })) {
-    // Log every event type from the SDK
-    if (message.type === "tool_use") {
+    if (message.type === "result") {
+      result = message.result || "";
+      turnCount = message.num_turns || turnCount;
+      logEvent(phase, { type: "result", num_turns: message.num_turns, stop_reason: message.stop_reason, is_error: message.is_error, preview: result.slice(0, 500) });
+    } else if (message.type === "assistant") {
       turnCount++;
-      logEvent(phase, { type: "tool_use", turn: turnCount, tool: message.tool, input_preview: JSON.stringify(message.input).slice(0, 200) });
-    } else if (message.type === "text") {
-      logEvent(phase, { type: "text", preview: (message.text || "").slice(0, 300) });
-    } else if ("result" in message) {
-      result = message.result;
-      logEvent(phase, { type: "result", preview: result.slice(0, 500) });
+      logEvent(phase, { type: "assistant", keys: Object.keys(message) });
     } else {
-      // Log any other event types we haven't explicitly handled
       logEvent(phase, { type: message.type || "unknown", keys: Object.keys(message) });
     }
   }
 
-  log(`Agent [${phase}] finished after ${turnCount} tool calls`);
+  log(`Agent [${phase}] finished after ${turnCount} turns`);
   logEvent(phase, { type: "agent_done", turnCount });
 
   return result;
@@ -290,7 +287,7 @@ ${conflictFiles}
 6. Continue until the rebase completes
 
 IMPORTANT: Do NOT use git rebase --abort. Resolve all conflicts.`,
-    { model: "claude-haiku-4-5-20251001", maxTurns: 80, phase: "rebase-conflicts" },
+    { model: "claude-haiku-4-5-20251001", phase: "rebase-conflicts" },
   );
 
   // Verify rebase completed
