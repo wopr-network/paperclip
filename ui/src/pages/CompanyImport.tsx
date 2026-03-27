@@ -13,6 +13,8 @@ import { useToast } from "../context/ToastContext";
 import { authApi } from "../api/auth";
 import { companiesApi } from "../api/companies";
 import { agentsApi } from "../api/agents";
+import { healthApi } from "../api/health";
+import { Navigate } from "@/lib/router";
 import { queryKeys } from "../lib/queryKeys";
 import { getAgentOrderStorageKey, writeAgentOrder } from "../lib/agent-order";
 import { getProjectOrderStorageKey, writeProjectOrder } from "../lib/project-order";
@@ -711,6 +713,18 @@ export function CompanyImport() {
       { label: "Import" },
     ]);
   }, [setBreadcrumbs]);
+
+  // Check if in hosted mode — import page exposes adapter/model configuration
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+    retry: false,
+  });
+  const isHosted = healthQuery.data?.hostedMode === true;
+
+  if (isHosted) {
+    return <Navigate to="/" replace />;
+  }
 
   function buildSource(): CompanyPortabilitySource | null {
     if (sourceMode === "local") {
