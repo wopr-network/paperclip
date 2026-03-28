@@ -7,12 +7,14 @@ import type {
   CompanyPortabilitySource,
   CompanyPortabilityAdapterOverride,
 } from "@paperclipai/shared";
+import { Navigate } from "@/lib/router";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { useToast } from "../context/ToastContext";
 import { authApi } from "../api/auth";
 import { companiesApi } from "../api/companies";
 import { agentsApi } from "../api/agents";
+import { healthApi } from "../api/health";
 import { queryKeys } from "../lib/queryKeys";
 import { getAgentOrderStorageKey, writeAgentOrder } from "../lib/agent-order";
 import { getProjectOrderStorageKey, writeProjectOrder } from "../lib/project-order";
@@ -652,6 +654,19 @@ export function CompanyImport() {
   const { setBreadcrumbs } = useBreadcrumbs();
   const { pushToast } = useToast();
   const queryClient = useQueryClient();
+
+  // Check if hosted mode is enabled — company import with adapter selection is not allowed
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+    retry: false,
+  });
+  const isHosted = healthQuery.data?.hostedMode === true;
+
+  if (isHosted) {
+    return <Navigate to="/" replace />;
+  }
+
   const packageInputRef = useRef<HTMLInputElement | null>(null);
   const { data: session } = useQuery({
     queryKey: queryKeys.auth.session,
