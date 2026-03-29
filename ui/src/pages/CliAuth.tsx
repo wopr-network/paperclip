@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams, useSearchParams } from "@/lib/router";
+import { Link, Navigate, useParams, useSearchParams } from "@/lib/router";
 import { Button } from "@/components/ui/button";
 import { accessApi } from "../api/access";
 import { authApi } from "../api/auth";
+import { healthApi } from "../api/health";
 import { queryKeys } from "../lib/queryKeys";
 
 export function CliAuthPage() {
@@ -16,6 +17,18 @@ export function CliAuthPage() {
     () => `/cli-auth/${encodeURIComponent(challengeId)}${token ? `?token=${encodeURIComponent(token)}` : ""}`,
     [challengeId, token],
   );
+
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+    retry: false,
+  });
+  const isHosted = healthQuery.data?.hostedMode === true;
+
+  // CLI configuration is not available in hosted mode — platform controls all infrastructure
+  if (isHosted) {
+    return <Navigate to="/" replace />;
+  }
 
   const sessionQuery = useQuery({
     queryKey: queryKeys.auth.session,
