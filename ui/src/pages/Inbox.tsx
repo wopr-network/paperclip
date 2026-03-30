@@ -65,7 +65,8 @@ type InboxCategoryFilter =
   | "alerts";
 type SectionKey =
   | "work_items"
-  | "alerts";
+  | "alerts"
+  | "join_requests";
 
 const INBOX_ISSUE_STATUSES = "backlog,todo,in_progress,in_review,blocked,done";
 
@@ -937,10 +938,14 @@ export function Inbox() {
     showOnUnread: hasAlerts,
     showOnAll: showAlertsCategory && hasAlerts,
   });
+  const showJoinRequestsSection =
+    joinRequestsForTab.length > 0 &&
+    (tab !== "all" || showJoinRequestsCategory);
 
   const visibleSections = [
-    showAlertsSection ? "alerts" : null,
     showWorkItemsSection ? "work_items" : null,
+    showJoinRequestsSection ? "join_requests" : null,
+    showAlertsSection ? "alerts" : null,
   ].filter((key): key is SectionKey => key !== null);
 
   const allLoaded =
@@ -1243,7 +1248,7 @@ export function Inbox() {
               Join Requests
             </h3>
             <div className="grid gap-3">
-              {joinRequests.map((joinRequest) => (
+              {joinRequestsForTab.map((joinRequest) => (
                 <div key={joinRequest.id} className="rounded-xl border border-border bg-card p-4">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="space-y-1">

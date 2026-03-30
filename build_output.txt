@@ -1,0 +1,61 @@
+
+> build
+> pnpm -r build
+
+Scope: 19 of 20 workspace projects
+packages/adapter-utils build$ tsc
+packages/shared build$ tsc
+packages/adapter-utils build: Done
+packages/shared build: Done
+packages/adapters/claude-local build$ tsc
+packages/adapters/codex-local build$ tsc
+packages/adapters/cursor-local build$ tsc
+packages/adapters/gemini-local build$ tsc
+packages/adapters/cursor-local build: Done
+packages/adapters/openclaw-gateway build$ tsc
+packages/adapters/gemini-local build: Done
+packages/adapters/claude-local build: Done
+packages/adapters/opencode-local build$ tsc
+packages/adapters/pi-local build$ tsc
+packages/adapters/codex-local build: Done
+packages/db build$ tsc && cp -r src/migrations dist/migrations
+packages/adapters/openclaw-gateway build: Done
+packages/plugins/sdk build$ pnpm --filter @paperclipai/shared build && tsc
+packages/adapters/pi-local build: Done
+packages/adapters/opencode-local build: Done
+packages/plugins/sdk build: > @paperclipai/shared@0.3.1 build /home/runner/actions-runner/_work/paperclip/paperclip/packages/shared
+packages/plugins/sdk build: > tsc
+packages/db build: Done
+packages/plugins/sdk build: Done
+packages/plugins/create-paperclip-plugin build$ tsc
+.../plugin-authoring-smoke-example prebuild$ node ../../../../scripts/ensure-plugin-build-deps.mjs
+.../examples/plugin-file-browser-example prebuild$ node ../../../../scripts/ensure-plugin-build-deps.mjs
+.../examples/plugin-hello-world-example prebuild$ node ../../../../scripts/ensure-plugin-build-deps.mjs
+.../plugin-authoring-smoke-example prebuild: Done
+.../examples/plugin-file-browser-example prebuild: Done
+.../plugin-authoring-smoke-example build$ node ./esbuild.config.mjs
+.../examples/plugin-file-browser-example build$ tsc && node ./scripts/build-ui.mjs
+.../examples/plugin-hello-world-example prebuild: Done
+.../examples/plugin-hello-world-example build$ tsc
+.../plugin-authoring-smoke-example build: Done
+.../examples/plugin-kitchen-sink-example prebuild$ node ../../../../scripts/ensure-plugin-build-deps.mjs
+.../examples/plugin-kitchen-sink-example prebuild: Done
+.../examples/plugin-kitchen-sink-example build$ tsc && node ./scripts/build-ui.mjs
+packages/plugins/create-paperclip-plugin build: Done
+server build$ tsc && mkdir -p dist/onboarding-assets && cp -R src/onboarding-assets/. dist/onboarding-assets/
+.../examples/plugin-hello-world-example build: Done
+ui build$ tsc -b && vite build
+.../examples/plugin-file-browser-example build:   dist/ui/index.js      945.6kb
+.../examples/plugin-file-browser-example build:   dist/ui/index.js.map    1.9mb
+.../examples/plugin-file-browser-example build: ⚡ Done in 52ms
+.../examples/plugin-file-browser-example build: Done
+.../examples/plugin-kitchen-sink-example build:   dist/ui/index.js      107.9kb
+.../examples/plugin-kitchen-sink-example build:   dist/ui/index.js.map  171.6kb
+.../examples/plugin-kitchen-sink-example build: ⚡ Done in 12ms
+.../examples/plugin-kitchen-sink-example build: Done
+server build: src/middleware/auth.ts(51,11): error TS2322: Type '"hosted_proxy"' is not assignable to type '"session" | "none" | "local_implicit" | "board_key" | "agent_key" | "agent_jwt" | undefined'.
+server build: src/middleware/board-mutation-guard.ts(61,9): error TS2367: This comparison appears to be unintentional because the types '"session" | "none" | "agent_key" | "agent_jwt" | undefined' and '"hosted_proxy"' have no overlap.
+server build: Failed
+/home/runner/actions-runner/_work/paperclip/paperclip/server:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @paperclipai/server@0.3.1 build: `tsc && mkdir -p dist/onboarding-assets && cp -R src/onboarding-assets/. dist/onboarding-assets/`
+Exit status 2

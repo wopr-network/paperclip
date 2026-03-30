@@ -1,0 +1,60 @@
+{
+  "version": "2026-03-30",
+  "date": "2026-03-30",
+  "sections": [
+    {
+      "title": "New",
+      "items": [
+        "add deploy step to managed image CI workflow",
+        "use generic model alias for gateway-routed agents (#8)",
+        "ROLE_PERMISSIONS map + hostedMode UI guards (#7)",
+        "changelog generation for managed image updates (#6)",
+        "hostedMode guards for upstream UI + automated upstream sync",
+        "add hosted mode to skip onboarding for platform-managed instances"
+      ]
+    },
+    {
+      "title": "Improved",
+      "items": [
+        "Resolve merge conflicts with upstream/master",
+        "switch upstream sync from rebase to merge",
+        "Merge branch 'fix/hosted-proxy-auto-detect'",
+        "merge: sync with upstream/master (488 commits)"
+      ]
+    },
+    {
+      "title": "Fixed",
+      "items": [
+        "bump upstream sync timeout to 60 min",
+        "delete stale sync branch before push + use --force",
+        "fix SDK event handling + remove maxTurns limit",
+        "stage all changed files before PR creation",
+        "switch agent SDK model to haiku — sonnet rate-limited on Max plan",
+        "write Claude credentials file for Agent SDK auth",
+        "target fork repo for PR creation",
+        "use temp remote with token URL for push auth",
+        "use credential helper script for push auth",
+        "use GIT_CONFIG_COUNT env vars for push auth",
+        "clean stale npm globals before installing Agent SDK",
+        "use inline git -c flags for auth — beats system credential manager",
+        "upstream-sync push auth — use extraheader to bypass credential helpers",
+        "auto-approve tool permissions + fix CI image namespace",
+        "respect process.env.HOME instead of overriding with passwd entry",
+        "skip auth gate in hostedMode + fix pre-existing build errors",
+        "disable credential helper before push in upstream sync",
+        "configure git push auth with GH_TOKEN for upstream sync",
+        "write agent log to /tmp to avoid dirtying working tree",
+        "add npm install before build check + agent event logging",
+        "use GH_PAT for push/PR permissions in upstream-sync",
+        "use CLAUDE_CODE_OAUTH_TOKEN for upstream-sync",
+        "use OAuth credentials for upstream-sync agent",
+        "hostedMode guards for remaining UI gaps + sync script fixes",
+        "add --repo flag to gh pr merge in dependabot auto-merge",
+        "remove error swallowing from dependabot auto-merge",
+        "major-version detection and silent error handling in dependabot auto-merge",
+        "inline dependabot auto-merge workflow",
+        "wire OpenCode config discovery and install binary in managed image"
+      ]
+    }
+  ]
+}
