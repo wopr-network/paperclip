@@ -10,6 +10,7 @@ import { ExecutionWorkspaceCloseDialog } from "../components/ExecutionWorkspaceC
 import { executionWorkspacesApi } from "../api/execution-workspaces";
 import { issuesApi } from "../api/issues";
 import { projectsApi } from "../api/projects";
+import { healthApi } from "../api/health";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { useCompany } from "../context/CompanyContext";
 import { queryKeys } from "../lib/queryKeys";
@@ -262,6 +263,13 @@ export function ExecutionWorkspaceDetail() {
   });
   const linkedIssues = linkedIssuesQuery.data ?? [];
 
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+    retry: false,
+  });
+  const isHosted = healthQuery.data?.hostedMode === true;
+
   const linkedProjectWorkspace = useMemo(
     () => project?.workspaces.find((item) => item.id === workspace?.projectWorkspaceId) ?? null,
     [project, workspace?.projectWorkspaceId],
@@ -508,58 +516,63 @@ export function ExecutionWorkspaceDetail() {
                   />
                 </Field>
 
-                <div className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-3 py-3">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                    <div>
-                      <div className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                        Runtime config source
+                {/* Runtime configuration section — hidden in hosted mode */}
+                {!isHosted && (
+                  <>
+                    <div className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-3 py-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                        <div>
+                          <div className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                            Runtime config source
+                          </div>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {runtimeConfigSource === "execution_workspace"
+                              ? "This execution workspace currently overrides the project workspace runtime config."
+                              : runtimeConfigSource === "project_workspace"
+                                ? "This execution workspace is inheriting the project workspace runtime config."
+                                : "No runtime config is currently defined on this execution workspace or its project workspace."}
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          className="w-full sm:w-auto"
+                          size="sm"
+                          disabled={!linkedProjectWorkspace?.runtimeConfig?.workspaceRuntime}
+                          onClick={() =>
+                            setForm((current) => current ? {
+                              ...current,
+                              inheritRuntime: true,
+                              workspaceRuntime: "",
+                            } : current)
+                          }
+                        >
+                          Reset to inherit
+                        </Button>
                       </div>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {runtimeConfigSource === "execution_workspace"
-                          ? "This execution workspace currently overrides the project workspace runtime config."
-                          : runtimeConfigSource === "project_workspace"
-                            ? "This execution workspace is inheriting the project workspace runtime config."
-                            : "No runtime config is currently defined on this execution workspace or its project workspace."}
-                      </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      className="w-full sm:w-auto"
-                      size="sm"
-                      disabled={!linkedProjectWorkspace?.runtimeConfig?.workspaceRuntime}
-                      onClick={() =>
-                        setForm((current) => current ? {
-                          ...current,
-                          inheritRuntime: true,
-                          workspaceRuntime: "",
-                        } : current)
-                      }
-                    >
-                      Reset to inherit
-                    </Button>
-                  </div>
-                </div>
 
-                <Field label="Runtime services JSON" hint="Concrete workspace runtime settings for this execution workspace. Leave this inheriting unless you need a one-off override. If you are missing the right commands, ask your CEO to set them up for you.">
-                  <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
-                    <input
-                      id="inherit-runtime-config"
-                      type="checkbox"
-                      checked={form.inheritRuntime}
-                      onChange={(event) =>
-                        setForm((current) => current ? { ...current, inheritRuntime: event.target.checked } : current)
-                      }
-                    />
-                    <label htmlFor="inherit-runtime-config">Inherit project workspace runtime config</label>
-                  </div>
-                  <textarea
-                    className="min-h-48 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60"
-                    value={form.workspaceRuntime}
-                    onChange={(event) => setForm((current) => current ? { ...current, workspaceRuntime: event.target.value } : current)}
-                    disabled={form.inheritRuntime}
-                    placeholder={'{\n  "services": [\n    {\n      "name": "web",\n      "command": "pnpm dev",\n      "port": 3100\n    }\n  ]\n}'}
-                  />
-                </Field>
+                    <Field label="Runtime services JSON" hint="Concrete workspace runtime settings for this execution workspace. Leave this inheriting unless you need a one-off override. If you are missing the right commands, ask your CEO to set them up for you.">
+                      <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+                        <input
+                          id="inherit-runtime-config"
+                          type="checkbox"
+                          checked={form.inheritRuntime}
+                          onChange={(event) =>
+                            setForm((current) => current ? { ...current, inheritRuntime: event.target.checked } : current)
+                          }
+                        />
+                        <label htmlFor="inherit-runtime-config">Inherit project workspace runtime config</label>
+                      </div>
+                      <textarea
+                        className="min-h-48 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                        value={form.workspaceRuntime}
+                        onChange={(event) => setForm((current) => current ? { ...current, workspaceRuntime: event.target.value } : current)}
+                        disabled={form.inheritRuntime}
+                        placeholder={'{\n  "services": [\n    {\n      "name": "web",\n      "command": "pnpm dev",\n      "port": 3100\n    }\n  ]\n}'}
+                      />
+                    </Field>
+                  </>
+                )}
               </div>
 
               <div className="mt-5 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -676,84 +689,87 @@ export function ExecutionWorkspaceDetail() {
               </DetailRow>
             </div>
 
-            <div className="rounded-2xl border border-border bg-card p-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="space-y-1">
-                  <div className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">Runtime services</div>
-                  <h2 className="text-lg font-semibold">Attached services</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Source: {runtimeConfigSource === "execution_workspace"
-                      ? "execution workspace override"
-                      : runtimeConfigSource === "project_workspace"
-                        ? "project workspace default"
-                        : "none"}
-                  </p>
+            {/* Runtime services section — hidden in hosted mode */}
+            {!isHosted && (
+              <div className="rounded-2xl border border-border bg-card p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">Runtime services</div>
+                    <h2 className="text-lg font-semibold">Attached services</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Source: {runtimeConfigSource === "execution_workspace"
+                        ? "execution workspace override"
+                        : runtimeConfigSource === "project_workspace"
+                          ? "project workspace default"
+                          : "none"}
+                    </p>
+                  </div>
+                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                      disabled={controlRuntimeServices.isPending || !effectiveRuntimeConfig || !workspace.cwd}
+                      onClick={() => controlRuntimeServices.mutate("start")}
+                    >
+                      {controlRuntimeServices.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
+                      Start
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                      disabled={controlRuntimeServices.isPending || !effectiveRuntimeConfig || !workspace.cwd}
+                      onClick={() => controlRuntimeServices.mutate("restart")}
+                    >
+                      Restart
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                      disabled={controlRuntimeServices.isPending || !hasActiveRuntimeServices(workspace)}
+                      onClick={() => controlRuntimeServices.mutate("stop")}
+                    >
+                      Stop
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full sm:w-auto"
-                    disabled={controlRuntimeServices.isPending || !effectiveRuntimeConfig || !workspace.cwd}
-                    onClick={() => controlRuntimeServices.mutate("start")}
-                  >
-                    {controlRuntimeServices.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
-                    Start
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full sm:w-auto"
-                    disabled={controlRuntimeServices.isPending || !effectiveRuntimeConfig || !workspace.cwd}
-                    onClick={() => controlRuntimeServices.mutate("restart")}
-                  >
-                    Restart
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full sm:w-auto"
-                    disabled={controlRuntimeServices.isPending || !hasActiveRuntimeServices(workspace)}
-                    onClick={() => controlRuntimeServices.mutate("stop")}
-                  >
-                    Stop
-                  </Button>
-                </div>
-              </div>
-              <Separator className="my-4" />
-              {workspace.runtimeServices && workspace.runtimeServices.length > 0 ? (
-                <div className="space-y-3">
-                  {workspace.runtimeServices.map((service) => (
-                    <div key={service.id} className="rounded-xl border border-border/80 bg-background px-3 py-2">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="space-y-1">
-                          <div className="text-sm font-medium">{service.serviceName}</div>
-                          <div className="text-xs text-muted-foreground">{service.status} · {service.lifecycle}</div>
-                          <div className="space-y-1 text-xs text-muted-foreground">
-                            {service.url ? (
-                              <a href={service.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:underline">
-                                {service.url}
-                                <ExternalLink className="h-3.5 w-3.5" />
-                              </a>
-                            ) : null}
-                            {service.port ? <div>Port {service.port}</div> : null}
-                            {service.command ? <MonoValue value={service.command} copy /> : null}
-                            {service.cwd ? <MonoValue value={service.cwd} copy /> : null}
+                <Separator className="my-4" />
+                {workspace.runtimeServices && workspace.runtimeServices.length > 0 ? (
+                  <div className="space-y-3">
+                    {workspace.runtimeServices.map((service) => (
+                      <div key={service.id} className="rounded-xl border border-border/80 bg-background px-3 py-2">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="space-y-1">
+                            <div className="text-sm font-medium">{service.serviceName}</div>
+                            <div className="text-xs text-muted-foreground">{service.status} · {service.lifecycle}</div>
+                            <div className="space-y-1 text-xs text-muted-foreground">
+                              {service.url ? (
+                                <a href={service.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:underline">
+                                  {service.url}
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                </a>
+                              ) : null}
+                              {service.port ? <div>Port {service.port}</div> : null}
+                              {service.command ? <MonoValue value={service.command} copy /> : null}
+                              {service.cwd ? <MonoValue value={service.cwd} copy /> : null}
+                            </div>
                           </div>
+                          <StatusPill className="self-start">{service.healthStatus}</StatusPill>
                         </div>
-                        <StatusPill className="self-start">{service.healthStatus}</StatusPill>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  {effectiveRuntimeConfig
-                    ? "No runtime services are currently running for this execution workspace."
-                    : "No runtime config is defined for this execution workspace yet."}
-                </p>
-              )}
-            </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {effectiveRuntimeConfig
+                      ? "No runtime services are currently running for this execution workspace."
+                      : "No runtime config is defined for this execution workspace yet."}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="rounded-2xl border border-border bg-card p-5">
               <div className="space-y-1">

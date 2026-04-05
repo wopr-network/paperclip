@@ -110,7 +110,8 @@ type InboxCategoryFilter =
   | "alerts";
 type SectionKey =
   | "work_items"
-  | "alerts";
+  | "alerts"
+  | "join_requests";
 
 function firstNonEmptyLine(value: string | null | undefined): string | null {
   if (!value) return null;
@@ -1551,10 +1552,12 @@ export function Inbox() {
     showOnUnread: hasAlerts,
     showOnAll: showAlertsCategory && hasAlerts,
   });
+  const showJoinRequestsSection = showJoinRequestsCategory && !isHosted;
 
   const visibleSections = [
     showAlertsSection ? "alerts" : null,
     showWorkItemsSection ? "work_items" : null,
+    showJoinRequestsSection ? "join_requests" : null,
   ].filter((key): key is SectionKey => key !== null);
 
   const allLoaded =
