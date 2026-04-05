@@ -21,16 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Bot, Plus, List, GitBranch, SlidersHorizontal } from "lucide-react";
 import { AGENT_ROLE_LABELS, type Agent } from "@paperclipai/shared";
 
-const adapterLabels: Record<string, string> = {
-  claude_local: "Claude",
-  codex_local: "Codex",
-  gemini_local: "Gemini",
-  opencode_local: "OpenCode",
-  cursor: "Cursor",
-  openclaw_gateway: "OpenClaw Gateway",
-  process: "Process",
-  http: "HTTP",
-};
+import { getAdapterLabel } from "../adapters/adapter-display-registry";
 
 const roleLabels = AGENT_ROLE_LABELS as Record<string, string>;
 
@@ -46,17 +37,21 @@ function matchesFilter(status: string, tab: FilterTab, showTerminated: boolean):
 }
 
 function filterAgents(agents: Agent[], tab: FilterTab, showTerminated: boolean): Agent[] {
-  return agents.filter((a) => matchesFilter(a.status, tab, showTerminated));
+  return agents
+    .filter((a) => matchesFilter(a.status, tab, showTerminated))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function filterOrgTree(nodes: OrgNode[], tab: FilterTab, showTerminated: boolean): OrgNode[] {
-  return nodes.reduce<OrgNode[]>((acc, node) => {
-    const filteredReports = filterOrgTree(node.reports, tab, showTerminated);
-    if (matchesFilter(node.status, tab, showTerminated) || filteredReports.length > 0) {
-      acc.push({ ...node, reports: filteredReports });
-    }
-    return acc;
-  }, []);
+  return nodes
+    .reduce<OrgNode[]>((acc, node) => {
+      const filteredReports = filterOrgTree(node.reports, tab, showTerminated);
+      if (matchesFilter(node.status, tab, showTerminated) || filteredReports.length > 0) {
+        acc.push({ ...node, reports: filteredReports });
+      }
+      return acc;
+    }, [])
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function Agents() {
@@ -269,7 +264,7 @@ export function Agents() {
                       )}
                       {!isHosted && (
                         <span className="text-xs text-muted-foreground font-mono w-14 text-right">
-                          {adapterLabels[agent.adapterType] ?? agent.adapterType}
+                          {getAdapterLabel(agent.adapterType)}
                         </span>
                       )}
                       <span className="text-xs text-muted-foreground w-16 text-right">
@@ -374,7 +369,7 @@ function OrgTreeNode({
               <>
                 {!isHosted && (
                   <span className="text-xs text-muted-foreground font-mono w-14 text-right">
-                    {adapterLabels[agent.adapterType] ?? agent.adapterType}
+                    {getAdapterLabel(agent.adapterType)}
                   </span>
                 )}
                 <span className="text-xs text-muted-foreground w-16 text-right">
