@@ -13,6 +13,7 @@ import { useToast } from "../context/ToastContext";
 import { authApi } from "../api/auth";
 import { companiesApi } from "../api/companies";
 import { agentsApi } from "../api/agents";
+import { healthApi } from "../api/health";
 import { queryKeys } from "../lib/queryKeys";
 import { getAgentOrderStorageKey, writeAgentOrder } from "../lib/agent-order";
 import { getProjectOrderStorageKey, writeProjectOrder } from "../lib/project-order";
@@ -660,6 +661,13 @@ export function CompanyImport() {
   });
   const currentUserId = session?.user?.id ?? session?.session?.userId ?? null;
 
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+    retry: false,
+  });
+  const isHosted = healthQuery.data?.hostedMode === true;
+
   // Source state
   const [sourceMode, setSourceMode] = useState<"github" | "local">("github");
   const [importUrl, setImportUrl] = useState("");
@@ -1276,15 +1284,17 @@ export function CompanyImport() {
           />
 
           {/* Adapter picker list */}
-          <AdapterPickerList
-            agents={adapterAgents}
-            adapterOverrides={adapterOverrides}
-            expandedSlugs={adapterExpandedSlugs}
-            configValues={adapterConfigValues}
-            onChangeAdapter={handleAdapterChange}
-            onToggleExpand={handleAdapterToggleExpand}
-            onChangeConfig={handleAdapterConfigChange}
-          />
+          {!isHosted && (
+            <AdapterPickerList
+              agents={adapterAgents}
+              adapterOverrides={adapterOverrides}
+              expandedSlugs={adapterExpandedSlugs}
+              configValues={adapterConfigValues}
+              onChangeAdapter={handleAdapterChange}
+              onToggleExpand={handleAdapterToggleExpand}
+              onChangeConfig={handleAdapterConfigChange}
+            />
+          )}
 
           {/* Import button — below renames */}
           <div className="mx-5 mt-3 flex justify-end">
